@@ -1,0 +1,99 @@
+== liste pour la demo
+
+* creation du projet avec leiningen
+----
+lein new reagent devoxx2017-clojure
+----
+* ajout des libs manquantes
+----
+[ring/ring-json "0.4.0"]
+[cljs-ajax "0.5.8"]
+----
+* modif des middlewares ring
+[source,clj]
+----
+[ring.middleware.json :refer [wrap-json-response wrap-json-body]]
+
+(wrap-defaults api-defaults)
+(wrap-json-response)
+(wrap-json-body  {:keywords? true :bigdecimals? true})
+----
+* Modif css vers bootstrap
+----
+(include-css "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css")
+----
+* Creation des 2 endpoints cote back
+----
+(defonce state (atom []))
+
+(GET "/notes"  []  {:body @state})
+
+(POST "/notes" {{ :keys [note title]} :body} 
+    (do (when (and note title) 
+          (let [entry {:title title :note note}] 
+            (swap! state conj entry) 
+            {:body entry}))))
+----
+* cote front, faire les appels ajax
+----
+(defn get-value [id]
+  (.-value (.getElementById js/document id)))
+
+(defn get-notes [_]
+  (GET "/notes" { :response-format :json
+                 :handler #(session/put! :notes %)}))
+
+(defn create-note [_]
+  (POST "/notes"  {:format :json
+                   :params {:title (get-value "title") :note (get-value "note")}
+                   :handler get-notes}))
+----
+* faire le formulaire
+----
+(defn display-form []
+  [:form.form-inline {:on-submit #(.preventDefault %)}
+   [:div.form-group
+    [:input.form-control {:type "text", :id "title", :placeholder "title"}]]
+   [:div.form-group
+    [:input.form-control {:type "text", :id "note", :placeholder "note"}]]
+   [:button {:class "btn btn-default" :on-click create-note} "add note"]]
+  )
+----
+
+* afficher les notes
+----
+(defn display-notes []
+  [:table.table
+   [:thead
+    [:tr
+     [:th "title"]
+     [:th "note"]
+     [:th "action"]]]
+   [:tbody
+    (let [notes (session/get :notes nil)]
+      (if (or (not notes) (= (count notes) 0))
+        [:tr]
+        (for [row notes]
+          [:tr
+           [:td (row "title")]
+           [:td (row "note")]
+           [:td  "\uD83D\uDDD1"]]
+          )))
+    ]])
+----
+
+* tout regrouper 
+----
+(defn home-page []
+  [:div [:div.row.col-md-12 [:h2 "Add a note"]]
+   [display-form]
+   [:form.form-inline {:on-submit #(.preventDefault %)}
+     [:div.form-group
+      [:input.form-control {:type "text", :id "title", :placeholder "title"}]]
+    [:div.form-group
+     [:input.form-control {:type "text", :id "note", :placeholder "note"}]]
+   [:button {:class "btn btn-default" :on-click create-note} "add note"]]
+
+  [:div.row.col-md-12 [:h2 "Current notes"]]
+    [display-notes]])
+----
