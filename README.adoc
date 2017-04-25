@@ -1,0 +1,7 @@
+= Présentation Devoxx France 2017
+
+== Intro
+
+Ce repository contient la présentation que j'ai donnée à Devoxx France 2017 intitulée "À la découverte de Clojure".
+
+La vidéo est disponible sur https://www.youtube.com/watch?v=z_KWmzs-j70&t=71s[Youtube]
